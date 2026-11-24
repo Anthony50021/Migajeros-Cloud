@@ -1,0 +1,21 @@
+name: Deploy Azure Bicep IaC (Self-Hosted)
+on:
+  workflow_dispatch: # Permite ejecución manual con un clic
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - name: Descargar Código (Checkout)
+        uses: actions/checkout@v4
+      - name: Validar Sintaxis Bicep
+        shell: cmd
+        run: |
+          call az bicep build --file main.bicep
+      - name: Desplegar Infraestructura
+        shell: cmd
+        env:
+          VM_PASS: ${{ secrets.VM_ADMIN_PASSWORD }}
+          SQL_PASS: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          call az group create --name rg-migajeros-cloud --location chilecentral
+          call az deployment group create --resource-group rg-migajeros-cloud --template-file main.bicep --parameters location=chilecentral vmAdminPassword="%VM_PASS%" sqlAdminPassword="%SQL_PASS%"
